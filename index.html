@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>azqFile - 共有アップローダー</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f5f3; color: #1a1a1a;
+    min-height: 100vh; display: flex;
+    align-items: flex-start; justify-content: center; padding: 3rem 1rem;
+  }
+  .card {
+    background: #fff; border-radius: 16px;
+    border: 0.5px solid #e0e0dc; padding: 2rem;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+  .logo-mark {
+    width: 36px; height: 36px; background: #1a1a1a; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark span { color: #fff; font-size: 12px; font-weight: 600; letter-spacing: -0.5px; }
+  .logo-name { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-badge {
+    font-size: 10px; color: #888; background: #f5f5f3;
+    border: 0.5px solid #ddd; border-radius: 4px; padding: 2px 6px;
+  }
+
+  /* ドロップゾーン */
+  .drop-zone {
+    border: 1.5px dashed #d0d0cc; border-radius: 12px;
+    padding: 2.5rem 1.5rem; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .drop-zone:hover, .drop-zone.dragging { border-color: #888; background: #fafaf8; }
+  .drop-zone .drop-icon { font-size: 30px; color: #bbb; display: block; margin-bottom: 10px; }
+  .drop-zone .drop-title { font-size: 14px; font-weight: 500; color: #333; margin-bottom: 4px; }
+  .drop-zone .drop-sub { font-size: 12px; color: #999; }
+  .browse-btn {
+    display: inline-block; margin-top: 14px; font-size: 13px; padding: 7px 18px;
+    border: 0.5px solid #d0d0cc; border-radius: 8px;
+    color: #333; background: #fff; cursor: pointer;
+    transition: background 0.1s, border-color 0.1s; font-family: inherit;
+  }
+  .browse-btn:hover { background: #f5f5f3; border-color: #bbb; }
+
+  /* ファイルリスト */
+  .file-list { display: flex; flex-direction: column; gap: 8px; margin-top: 1rem; }
+  .file-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; background: #fafaf8;
+    border: 0.5px solid #e8e8e4; border-radius: 10px;
+  }
+  .file-item .fi-icon { font-size: 20px; color: #888; flex-shrink: 0; }
+  .file-item .fi-info { flex: 1; min-width: 0; }
+  .file-item .fi-name {
+    font-size: 13px; font-weight: 500; color: #1a1a1a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .file-item .fi-size { font-size: 11px; color: #aaa; margin-top: 1px; }
+  .file-item .fi-remove {
+    background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 16px; padding: 2px; line-height: 1;
+    transition: color 0.1s; flex-shrink: 0;
+  }
+  .file-item .fi-remove:hover { color: #666; }
+
+  /* フォーム */
+  .form-section { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 10px; }
+  .form-group label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; }
+  .form-group input, .form-group textarea {
+    width: 100%; font-size: 14px; font-family: inherit;
+    padding: 8px 12px; border: 0.5px solid #d8d8d4; border-radius: 8px;
+    background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: #888; }
+  .form-group textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+
+  /* 警告 */
+  .warn-box {
+    margin-top: 1rem; padding: 10px 12px; border-radius: 8px;
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 12px; line-height: 1.6;
+    background: #fffbf0; border: 0.5px solid #f0d88a; color: #7a5c00;
+  }
+  .warn-box i { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* プログレス */
+  .progress-wrap { margin-top: 1rem; display: none; flex-direction: column; gap: 8px; }
+  .progress-label { font-size: 12px; color: #888; display: flex; justify-content: space-between; }
+  .progress-bar-bg {
+    height: 4px; background: #ebebeb; border-radius: 99px; overflow: hidden;
+  }
+  .progress-bar { height: 100%; background: #1a1a1a; border-radius: 99px; transition: width 0.2s; width: 0%; }
+  .progress-file { font-size: 11px; color: #bbb; }
+
+  /* 送信ボタン */
+  .send-btn {
+    margin-top: 1.25rem; width: 100%; padding: 12px;
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    border-radius: 10px; border: none;
+    background: #1a1a1a; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity 0.15s;
+  }
+  .send-btn:hover:not(:disabled) { opacity: 0.8; }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* 成功（URL発行表示）エリア */
+  .success-box {
+    margin-top: 1rem; padding: 14px;
+    background: #f0faf4; border: 0.5px solid #b2dfc4; border-radius: 10px;
+    display: none; flex-direction: column; gap: 12px;
+    font-size: 13px; color: #2d7a4f; line-height: 1.5;
+  }
+  .success-title { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  
+  .url-card {
+    background: #fff; padding: 8px 10px; border-radius: 6px;
+    border: 0.5px solid #cbd2ce; display: flex; flex-direction: column; gap: 6px;
+  }
+  .url-filename { font-size: 11px; color: #666; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .url-input-wrap { display: flex; gap: 6px; }
+  .url-input {
+    flex: 1; font-size: 12px; padding: 4px 8px; border: 0.5px solid #ccc; border-radius: 4px;
+    background: #fafaf8; color: #333; outline: none;
+  }
+  .copy-btn {
+    background: #2d7a4f; color: #fff; border: none; padding: 4px 10px; font-size: 11px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; font-weight: 600; white-space: nowrap;
+  }
+
+  /* ダウンロード専用UI（URLから来た人向け） */
+  .download-panel {
+    display: none; flex-direction: column; gap: 14px; text-align: center; padding: 1rem 0;
+  }
+  .dl-file-icon { font-size: 48px; color: #1a1a1a; margin-bottom: 0.5rem; }
+  .dl-file-name { font-size: 16px; font-weight: 600; color: #1a1a1a; word-break: break-all; }
+  .dl-file-info { font-size: 12px; color: #888; margin-top: -4px; }
+  .dl-start-btn {
+    background: #1a1a1a; color: #fff; border: none; padding: 12px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .dl-start-btn:hover { opacity: 0.8; }
+  .dl-start-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* エラー */
+  .error-box {
+    margin-top: 1rem; padding: 10px 12px;
+    background: #fdf2f2; border: 0.5px solid #f0c0be; border-radius: 8px;
+    display: none; font-size: 12px; color: #c0392b; line-height: 1.6;
+  }
+
+  footer { margin-top: 1.5rem; text-align: center; font-size: 11px; color: #ccc; }
+
+  @media (max-width: 540px) {
+    body { padding: 1rem 0.75rem; }
+    .card { border-radius: 12px; padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark"><span>azq</span></div>
+    <span class="logo-name">azqFile</span>
+    <span class="logo-badge">beta</span>
+  </div>
+
+  <div id="uploadContainer">
+    <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="ファイルをドロップまたはクリックして選択">
+      <i class="ti ti-upload drop-icon" aria-hidden="true"></i>
+      <p class="drop-title">ファイルをドラッグ＆ドロップ</p>
+      <p class="drop-sub">すべての形式に対応</p>
+      <button class="browse-btn" id="browseBtn" type="button">ファイルを選択</button>
+      <input type="file" id="fileInput" multiple style="display:none;">
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+
+    <div class="form-section" id="formSection" style="display:none;">
+      <div class="form-group">
+        <label for="senderName">アップロード者（任意）</label>
+        <input type="text" id="senderName" placeholder="例: 太郎、匿名さん">
+      </div>
+      <div class="form-group">
+        <label for="msgNote">ファイルの説明（任意）</label>
+        <textarea id="msgNote" placeholder="ダウンロードする人に伝えるメモなど"></textarea>
+      </div>
+    </div>
+
+    <div class="warn-box" id="warnBox" style="display:none;">
+      <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+      <span id="warnText"></span>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label">
+        <span id="progressText">アップロード中...</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="progress-file" id="progressFile"></div>
+    </div>
+
+    <button class="send-btn" id="sendBtn" type="button" disabled>
+      <i class="ti ti-cloud-upload" aria-hidden="true"></i>
+      ファイルをアップロードする
+    </button>
+  </div>
+
+  <div class="download-panel" id="downloadPanel">
+    <i class="ti ti-file" id="dlFileIcon" class="dl-file-icon" style="font-size: 48px;"></i>
+    <div class="dl-file-name" id="dlFileName">ファイル名</div>
+    <div class="dl-file-info" id="dlFileInfo">サイズ: -- | 投稿者: --</div>
+    <div style="font-size: 13px; color:#666; margin: 4px 0 10px 0; text-align: left; background: #fafaf8; padding: 10px; border-radius: 6px; border:0.5px solid #eee;" id="dlFileNote"></div>
+    
+    <button class="dl-start-btn" id="dlStartBtn">
+      <i class="ti ti-download"></i> ダウンロードを開始
+    </button>
+  </div>
+
+  <div class="success-box" id="successBox">
+    <div class="success-title">
+      <i class="ti ti-circle-check" style="font-size:20px;"></i>
+      <span>アップロードが完了しました！</span>
+    </div>
+    <div id="issuedUrlList"></div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <footer>azqFile &mdash; 手軽にファイル共有</footer>
+</div>
+
+<script type="module">
+  const firebaseConfig = {
+    apiKey: "AIzaSyAuQGXQLhdkQ9IvJ4v3D14afdHmAgU3LOw",
+    authDomain: "azqfile.firebaseapp.com",
+    projectId: "azqfile",
+    storageBucket: "azqfile.firebasestorage.app",
+    messagingSenderId: "329891861242",
+    appId: "1:329891861242:web:094003e12667039ff72f43"
+  };
+
+  const CHUNK_SIZE = 700 * 1024; 
+  const MAX_FILE_MB = 5;         
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, doc, setDoc, getDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  let files = [];
+
+  // 要素取得
+  const uploadContainer = document.getElementById('uploadContainer');
+  const downloadPanel = document.getElementById('downloadPanel');
+  const dropZone    = document.getElementById('dropZone');
+  const fileInput   = document.getElementById('fileInput');
+  const browseBtn   = document.getElementById('browseBtn');
+  const fileList    = document.getElementById('fileList');
+  const formSection = document.getElementById('formSection');
+  const warnBox     = document.getElementById('warnBox');
+  const warnText    = document.getElementById('warnText');
+  const progressWrap= document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressText= document.getElementById('progressText');
+  const progressPct = document.getElementById('progressPct');
+  const progressFile= document.getElementById('progressFile');
+  const sendBtn     = document.getElementById('sendBtn');
+  const successBox  = document.getElementById('successBox');
+  const issuedUrlList = document.getElementById('issuedUrlList');
+  const errorBox    = document.getElementById('errorBox');
+
+  // URLパラメータ（?id=xxxxx）のチェック
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareId = urlParams.get('id');
+
+  if (shareId) {
+    // 【ダウンロードモード】
+    uploadContainer.style.display = 'none';
+    downloadPanel.style.display = 'flex';
+    setupDownloadPage(shareId);
+  } else {
+    // 【通常アップロードモード】
+    setupUploadPage();
+  }
+
+  function fmtSize(b) {
+    if (b < 1024)         return b + ' B';
+    if (b < 1024 * 1024)  return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function fileIcon(name) {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const map = {
+      pdf: 'ti-file-type-pdf', doc: 'ti-file-type-doc', docx: 'ti-file-type-doc',
+      xls: 'ti-file-spreadsheet', xlsx: 'ti-file-spreadsheet',
+      png: 'ti-photo', jpg: 'ti-photo', jpeg: 'ti-photo', gif: 'ti-photo',
+      zip: 'ti-file-zip', rar: 'ti-file-zip', txt: 'ti-file-text'
+    };
+    return map[ext] || 'ti-file';
+  }
+
+  /* ---------------------------------------------------
+     アップロードモードのロジック
+  --------------------------------------------------- */
+  function setupUploadPage() {
+    browseBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragging'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.classList.remove('dragging');
+      addFiles(Array.from(e.dataTransfer.files));
+    });
+  }
+
+  function addFiles(newFiles) {
+    newFiles.forEach(f => {
+      if (!files.find(x => x.name === f.name && x.size === f.size)) files.push(f);
+    });
+    render();
+  }
+
+  function render() {
+    fileList.innerHTML = '';
+    let oversized = [];
+
+    files.forEach((f, i) => {
+      if (f.size > MAX_FILE_MB * 1024 * 1024) oversized.push(f.name);
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = `
+        <i class="ti ${fileIcon(f.name)} fi-icon"></i>
+        <div class="fi-info">
+          <div class="fi-name" title="${f.name}">${f.name}</div>
+          <div class="fi-size">${fmtSize(f.size)}</div>
+        </div>
+        <button class="fi-remove" data-i="${i}"><i class="ti ti-x"></i></button>`;
+      fileList.appendChild(item);
+    });
+
+    const hasFiles = files.length > 0;
+    formSection.style.display = hasFiles ? 'flex' : 'none';
+    sendBtn.disabled = !hasFiles || oversized.length > 0;
+
+    if (oversized.length > 0) {
+      warnBox.style.display = 'flex';
+      warnText.textContent = `以下のファイルは${MAX_FILE_MB}MBを超えているため送信できません: ${oversized.join(', ')}`;
+    } else {
+      warnBox.style.display = 'none';
+    }
+
+    document.querySelectorAll('.fi-remove').forEach(btn => {
+      btn.addEventListener('click', () => { files.splice(parseInt(btn.dataset.i), 1); render(); });
+    });
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function chunkBase64(b64) {
+    const chunks = [];
+    for (let i = 0; i < b64.length; i += CHUNK_SIZE) {
+      chunks.push(b64.slice(i, i + CHUNK_SIZE));
+    }
+    return chunks;
+  }
+
+  sendBtn.addEventListener('click', async () => {
+    if (!files.length) return;
+    const name = document.getElementById('senderName').value.trim();
+    const note = document.getElementById('msgNote').value.trim();
+
+    sendBtn.disabled = true;
+    progressWrap.style.display = 'flex';
+    errorBox.style.display = 'none';
+    successBox.style.display = 'none';
+    issuedUrlList.innerHTML = '';
+
+    try {
+      for (let fi = 0; fi < files.length; fi++) {
+        const file = files[fi];
+        progressFile.textContent = `${fi + 1} / ${files.length}: ${file.name}`;
+        progressText.textContent = 'Base64変換中...';
+        setProgress(0);
+
+        const b64    = await fileToBase64(file);
+        const chunks = chunkBase64(b64);
+
+        const uploadRef = await addDoc(collection(db, 'uploads'), {
+          senderName:  name  || '匿名さん',
+          note:        note  || 'メモなし',
+          fileName:    file.name,
+          fileType:    file.type || 'application/octet-stream',
+          fileSize:    file.size,
+          chunkCount:  chunks.length,
+          uploadedAt:  serverTimestamp(),
+          status:      'uploading',
+        });
+
+        for (let ci = 0; ci < chunks.length; ci++) {
+          await setDoc(doc(db, 'uploads', uploadRef.id, 'chunks', String(ci)), {
+            data: chunks[ci],
+          });
+          setProgress(Math.round(((ci + 1) / chunks.length) * 100));
+        }
+
+        await setDoc(doc(db, 'uploads', uploadRef.id), { status: 'complete' }, { merge: true });
+        
+        // ★ ダウンロード用共有URLの作成
+        const shareUrl = `${window.location.origin}${window.location.pathname}?id=${uploadRef.id}`;
+        
+        // 画面にURLコピー用の枠を表示
+        const urlCard = document.createElement('div');
+        urlCard.className = 'url-card';
+        urlCard.innerHTML = `
+          <div class="url-filename"><i class="ti ${fileIcon(file.name)}"></i> ${file.name}</div>
+          <div class="url-input-wrap">
+            <input type="text" class="url-input" value="${shareUrl}" readonly>
+            <button type="button" class="copy-btn">URLをコピー</button>
+          </div>
+        `;
+        issuedUrlList.appendChild(urlCard);
+      }
+
+      // コピーボタンのイベント有効化
+      issuedUrlList.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const input = e.target.previousElementSibling;
+          input.select();
+          navigator.clipboard.writeText(input.value);
+          e.target.textContent = "コピー完了！";
+          setTimeout(() => e.target.textContent = "URLをコピー", 2000);
+        });
+      });
+
+      progressWrap.style.display = 'none';
+      successBox.style.display   = 'flex';
+      files = [];
+      render();
+      document.getElementById('senderName').value = '';
+      document.getElementById('msgNote').value    = '';
+
+    } catch (err) {
+      progressWrap.style.display = 'none';
+      errorBox.style.display     = 'block';
+      errorBox.textContent       = `アップロード失敗: ${err.message}`;
+      sendBtn.disabled = false;
+    }
+  });
+
+  function setProgress(pct) {
+    progressBar.style.width = pct + '%';
+    progressPct.textContent = pct + '%';
+  }
+
+  /* ---------------------------------------------------
+     ダウンロードモードのロジック（URLから開かれた場合）
+  --------------------------------------------------- */
+  async function setupDownloadPage(id) {
+    const dlFileName = document.getElementById('dlFileName');
+    const dlFileInfo = document.getElementById('dlFileInfo');
+    const dlFileNote = document.getElementById('dlFileNote');
+    const dlFileIcon = document.getElementById('dlFileIcon');
+    const dlStartBtn = document.getElementById('dlStartBtn');
+
+    dlStartBtn.disabled = true;
+    dlFileName.textContent = "情報を読み込み中...";
+
+    try {
+      const metaRef = doc(db, 'uploads', id);
+      const metaSnap = await getDoc(metaRef);
+      
+      if (!metaSnap.exists()) {
+        throw new Error('ファイルが存在しないか、すでに削除されています。');
+      }
+
+      const metaData = metaSnap.data();
+      
+      if (metaData.status !== 'complete') {
+        throw new Error('このファイルはまだアップロードの途中です。');
+      }
+
+      // 画面をファイル情報に書き換え
+      dlFileName.textContent = metaData.fileName;
+      dlFileInfo.textContent = `サイズ: ${fmtSize(metaData.fileSize)} | アップロード者: ${metaData.senderName}`;
+      dlFileNote.textContent = `メモ: ${metaData.note}`;
+      
+      // アイコンクラスを変更
+      dlFileIcon.className = `ti ${fileIcon(metaData.fileName)} dl-file-icon`;
+      dlStartBtn.disabled = false;
+
+      // ダウンロード実行イベント
+      dlStartBtn.addEventListener('click', () => executeDownload(id, metaData, dlStartBtn));
+
+    } catch (err) {
+      dlFileName.textContent = "エラー";
+      errorBox.style.display = 'block';
+      errorBox.textContent = err.message;
+    }
+  }
+
+  async function executeDownload(id, meta, btn) {
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+
+    try {
+      let fullBase64 = "";
+      const chunkCount = meta.chunkCount;
+
+      for (let ci = 0; ci < chunkCount; ci++) {
+        btn.innerHTML = `<i class="ti ti-loader"></i> データをダウンロード中 (${Math.round((ci/chunkCount)*100)}%)`;
+        const chunkRef = doc(db, 'uploads', id, 'chunks', String(ci));
+        const chunkSnap = await getDoc(chunkRef);
+        if (chunkSnap.exists()) {
+          fullBase64 += chunkSnap.data().data;
+        } else {
+          throw new Error('ファイルの一部が見つかりませんでした。');
+        }
+      }
+
+      btn.innerHTML = `<i class="ti ti-loader"></i> ファイルを復元中...`;
+
+      // バイナリ変換処理
+      const byteCharacters = atob(fullBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: meta.fileType });
+
+      // 自動ダウンロード発火
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = meta.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+
+      btn.innerHTML = `<i class="ti ti-check"></i> 完了！`;
+    } catch (err) {
+      alert("ダウンロード失敗: " + err.message);
+    } finally {
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }, 2000);
+    }
+  }
+</script>
+</body>
+</html>
