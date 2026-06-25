@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>お問い合わせ — azqFile</title>
+<!-- OGP -->
+<meta property="og:title" content="お問い合わせ — azqFile">
+<meta property="og:description" content="azqFileへのお問い合わせフォームです。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://placehold.co/1200x630/1a1a1a/ffffff?text=azqFile">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="お問い合わせ — azqFile">
+<meta name="twitter:description" content="azqFileへのお問い合わせフォームです。">
+<meta name="twitter:image" content="https://placehold.co/1200x630/1a1a1a/ffffff?text=azqFile">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f3; color: #1a1a1a; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 3rem 1rem; }
+  .container { width: 100%; max-width: 520px; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; text-decoration: none; }
+  .logo-mark { width: 32px; height: 32px; background: #1a1a1a; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+  .logo-mark span { color: #fff; font-size: 11px; font-weight: 600; }
+  .logo-name { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+
+  .card { background: #fff; border-radius: 16px; border: 0.5px solid #e0e0dc; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #aaa; margin-bottom: 8px; }
+  .card-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .card-sub { font-size: 13px; color: #888; line-height: 1.7; margin-bottom: 1.75rem; }
+
+  .form { display: flex; flex-direction: column; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; color: #888; font-weight: 500; }
+  .form-group label .req { color: #c0392b; margin-left: 2px; }
+  .form-group input, .form-group textarea, .form-group select {
+    font-size: 14px; font-family: inherit;
+    padding: 9px 12px; border: 0.5px solid #d8d8d4; border-radius: 8px;
+    background: #fff; color: #1a1a1a; outline: none; transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #888; }
+  .form-group textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+  .form-group .hint { font-size: 11px; color: #bbb; margin-top: 2px; }
+
+  .char-count { font-size: 11px; color: #bbb; text-align: right; margin-top: 2px; }
+  .char-count.warn { color: #e07b00; }
+  .char-count.over { color: #c0392b; }
+
+  .submit-btn {
+    margin-top: 4px; width: 100%; padding: 12px;
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    border-radius: 10px; border: none;
+    background: #1a1a1a; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity 0.15s;
+  }
+  .submit-btn:hover:not(:disabled) { opacity: 0.8; }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .error-box { padding: 10px 12px; background: #fdf2f2; border: 0.5px solid #f0c0be; border-radius: 8px; font-size: 12px; color: #c0392b; line-height: 1.6; display: none; }
+
+  /* 完了画面 */
+  #successSection { display: none; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding: 1rem 0; }
+  .success-icon { width: 56px; height: 56px; background: #f0faf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #2d7a4f; }
+  .success-title { font-size: 18px; font-weight: 700; }
+  .success-body { font-size: 13px; color: #888; line-height: 1.8; }
+  .back-btn { margin-top: 4px; font-size: 13px; color: #888; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; border: 0.5px solid #e0e0dc; border-radius: 8px; padding: 8px 16px; transition: border-color 0.1s; }
+  .back-btn:hover { border-color: #bbb; color: #1a1a1a; }
+
+  footer { margin-top: 2rem; text-align: center; font-size: 11px; color: #ccc; }
+  footer a { color: #aaa; }
+
+  @media (max-width: 540px) { body { padding: 1rem 0.75rem; } .card { padding: 1.25rem; border-radius: 12px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="logo" href="./azqfile-firebase.html">
+    <div class="logo-mark"><span>azq</span></div>
+    <span class="logo-name">azqFile</span>
+  </a>
+
+  <div class="card">
+    <!-- フォーム -->
+    <div id="formSection">
+      <div class="card-label">Contact</div>
+      <h1 class="card-title">お問い合わせ</h1>
+      <p class="card-sub">ご質問・ご要望などお気軽にお送りください。内容を確認のうえ、返信メールアドレス宛にご連絡いたします。</p>
+
+      <div class="form" id="contactForm">
+        <div class="form-group">
+          <label for="contactName">お名前 / ニックネーム<span class="req">*</span></label>
+          <input type="text" id="contactName" placeholder="例: 山田 太郎、taro" maxlength="100">
+        </div>
+        <div class="form-group">
+          <label for="contactEmail">返信用メールアドレス<span class="req">*</span></label>
+          <input type="email" id="contactEmail" placeholder="taro@example.com">
+          <span class="hint">このアドレス宛に返信いたします</span>
+        </div>
+        <div class="form-group">
+          <label for="contactCategory">お問い合わせ種別</label>
+          <select id="contactCategory">
+            <option value="">選択してください（任意）</option>
+            <option value="general">一般的なご質問</option>
+            <option value="bug">不具合・バグ報告</option>
+            <option value="feature">機能リクエスト</option>
+            <option value="privacy">プライバシー・データに関して</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="contactBody">お問い合わせ内容<span class="req">*</span></label>
+          <textarea id="contactBody" placeholder="お問い合わせ内容をご記入ください" maxlength="2000"></textarea>
+          <div class="char-count" id="charCount">0 / 2000</div>
+        </div>
+
+        <div class="error-box" id="errorBox"></div>
+
+        <button class="submit-btn" id="submitBtn" type="button">
+          送信する
+        </button>
+      </div>
+    </div>
+
+    <!-- 完了 -->
+    <div id="successSection">
+      <div class="success-icon">✓</div>
+      <div class="success-title">送信しました</div>
+      <p class="success-body">お問い合わせを受け付けました。<br>返信用メールアドレス宛に折り返しご連絡いたします。<br>しばらくお待ちください。</p>
+      <a class="back-btn" href="./azqfile-firebase.html">← トップに戻る</a>
+    </div>
+  </div>
+
+  <footer>
+    <a href="./azqfile-firebase.html">azqFile</a> &nbsp;·&nbsp;
+    <a href="./azqfile-privacy.html">プライバシーポリシー</a> &nbsp;·&nbsp;
+    <a href="./azqfile-terms.html">利用規約</a>
+  </footer>
+</div>
+
+<script type="module">
+  /* ==============================================
+     ★ Firebase設定（コンソールから貼り付ける）
+     ============================================== */
+  const FirebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID",
+  };
+  /* ============================================== */
+
+  import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const app = initializeApp(FirebaseConfig);
+  const db  = getFirestore(app);
+
+  const bodyEl    = document.getElementById('contactBody');
+  const charCount = document.getElementById('charCount');
+  const errorBox  = document.getElementById('errorBox');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // 文字数カウント
+  bodyEl.addEventListener('input', () => {
+    const len = bodyEl.value.length;
+    charCount.textContent = `${len} / 2000`;
+    charCount.className   = 'char-count' + (len > 1900 ? ' over' : len > 1500 ? ' warn' : '');
+  });
+
+  // 送信
+  submitBtn.addEventListener('click', async () => {
+    const name     = document.getElementById('contactName').value.trim();
+    const email    = document.getElementById('contactEmail').value.trim();
+    const category = document.getElementById('contactCategory').value;
+    const body     = bodyEl.value.trim();
+
+    // バリデーション
+    if (!name) { showError('お名前またはニックネームを入力してください。'); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('有効なメールアドレスを入力してください。'); return; }
+    if (!body) { showError('お問い合わせ内容を入力してください。'); return; }
+    if (body.length > 2000) { showError('お問い合わせ内容は2000文字以内でご入力ください。'); return; }
+
+    errorBox.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span style="font-size:13px;opacity:0.7">送信中...</span>';
+
+    try {
+      await addDoc(collection(db, 'contacts'), {
+        name,
+        email,
+        category: category || null,
+        body,
+        createdAt: serverTimestamp(),
+        status: 'unread',  // 管理者が既読にできるよう
+      });
+
+      // 完了画面へ
+      document.getElementById('formSection').style.display   = 'none';
+      document.getElementById('successSection').style.display = 'flex';
+
+    } catch (err) {
+      showError(`送信に失敗しました: ${err.message}`);
+      submitBtn.disabled = false;
+      submitBtn.textContent = '送信する';
+      console.error(err);
+    }
+  });
+
+  function showError(msg) {
+    errorBox.textContent   = msg;
+    errorBox.style.display = 'block';
+    errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+</script>
+</body>
+</html>
